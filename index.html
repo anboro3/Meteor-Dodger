@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meteor Dodger</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="game-container">
+    <h1>Meteor Dodger</h1>
+    <p>矢印キー(← →) または A/D で移動して隕石をよけろ！</p>
+    <!-- 
+           Canvas: ここにゲームの絵を描画します。
+           Pythonのturtleグラフィックスのキャンバスのようなものです。
+        -->
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <div id="settings">
+      <!-- Left Side: Legend -->
+      <div id="legend">
+        <h4>アイテム説明</h4>
+        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+          <img src="assets/star.png" width="30" height="30" style="margin-right: 10px;">
+          <span><strong>無敵 (5秒)</strong>: 隕石を破壊！(破壊数×100pt加算)</span>
+        </div>
+        <div style="display: flex; align-items: center;">
+          <img src="assets/clock.png" width="30" height="30" style="margin-right: 10px;">
+          <span><strong>減速 (5秒)</strong>: 隕石がゆっくりに！</span>
+        </div>
+      </div>
+
+      <!-- Right Side: Speed & Difficulty -->
+      <div id="controls-right">
+        <div style="margin-bottom: 10px;">
+          <label>
+            宇宙船スピード: <span id="playerSpeedVal">0.7</span>
+            <input type="range" id="playerSpeedRange" min="0.5" max="3.0" step="0.1" value="0.7">
+          </label>
+        </div>
+        <div style="margin-bottom: 10px;">
+          難易度:
+          <label><input type="radio" name="difficulty" value="easy" checked> Easy</label>
+          <label><input type="radio" name="difficulty" value="normal"> Normal</label>
+          <label><input type="radio" name="difficulty" value="hard"> Hard</label>
+          <label><input type="radio" name="difficulty" value="progressive" style="color:#ff5555; font-weight:bold;">
+            Progressive</label>
+        </div>
+      </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+
+</html>

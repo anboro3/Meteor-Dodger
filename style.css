@@ -1,0 +1,95 @@
+/* 
+  簡単なスタイリング
+  Pythonではあまり馴染みがないかもしれませんが、
+  Webでは「見た目」をCSSという専用の言語で記述します。
+*/
+
+body {
+    background-color: #222;
+    /* 背景を暗いグレーに */
+    color: white;
+    /* 文字色を白に */
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    /* 画面いっぱいの高さ */
+    margin: 0;
+}
+
+#game-container {
+    text-align: center;
+    width: 800px;
+    /* キャンバス幅に合わせる */
+    margin: 0 auto;
+}
+
+canvas {
+    background-color: #000;
+    border: 2px solid #555;
+    display: block;
+    margin: 0 auto;
+}
+
+#settings {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+
+    /* Flexbox layout */
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    text-align: left;
+    color: white;
+}
+
+#controls-right {
+    text-align: right;
+}
+
+label {
+    display: inline-block;
+    /* 横並びにするため */
+    margin: 0 5px;
+    cursor: pointer;
+}
+
+input[type="range"] {
+    vertical-align: middle;
+    margin-left: 10px;
+}
+
+#legend {
+    padding-top: 0;
+    font-size: 0.9em;
+}
+
+#legend h4 {
+    margin: 0 0 5px 0;
+}
+
+#legend p {
+    margin: 2px 0;
+}
+
+.item-icon {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.gold {
+    color: gold;
+}
+
+.cyan {
+    color: cyan;
+}
+
+.pink {
+    color: #ff69b4;
+}

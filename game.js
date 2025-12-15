@@ -10,7 +10,11 @@ const SCREEN_HEIGHT = canvas.height;
 const imgSpaceship = new Image();
 imgSpaceship.src = 'assets/spaceship.png';
 
+const imgSpaceshipVillain = new Image();
+imgSpaceshipVillain.src = 'assets/spaceship_villain.png';
+
 const imgMeteor = new Image();
+// ... (rest unchanged)
 imgMeteor.src = 'assets/meteor.png';
 
 const imgStar = new Image();
@@ -94,6 +98,28 @@ let playerSpeedScale = 0.7;
 let invincibleEndTime = 0;
 let slowDownEndTime = 0;
 
+// --- スキン管理 ---
+let isVillainUnlocked = localStorage.getItem('meteor_skin_villain_unlocked') === 'true';
+let currentSkin = localStorage.getItem('meteor_current_skin') || 'standard';
+
+const skinSelect = document.getElementById('skinSelect');
+if (skinSelect) {
+  // Init UI status
+  if (isVillainUnlocked) {
+    skinSelect.options[1].disabled = false;
+    skinSelect.options[1].text = "Villain (Red)";
+  } else {
+    skinSelect.options[1].text = "Villain (Red) 🔒 (Get 20,000pts)";
+  }
+  skinSelect.value = currentSkin;
+
+  skinSelect.addEventListener('change', (e) => {
+    currentSkin = e.target.value;
+    localStorage.setItem('meteor_current_skin', currentSkin);
+    /* if (!isGameRunning) draw(); // Optional preview */
+  });
+}
+
 // --- 設定UIのイベントリスナー ---
 const diffRadios = document.getElementsByName('difficulty');
 for (let i = 0; i < diffRadios.length; i++) {
@@ -150,19 +176,48 @@ for (let i = 0; i < 100; i++) {
   });
 }
 
-// --- 操作入力 ---
-const keys = { right: false, left: false };
-document.addEventListener('keydown', function (e) {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].indexOf(e.code) > -1) e.preventDefault();
-  if (isGameOver && (e.code === 'Space' || e.code === 'Enter')) resetGame();
+// --- 操作入力 (Input Handling) ---
+const keys = {};
+let isTouchLeft = false;
+let isTouchRight = false;
 
-  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
-  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+window.addEventListener('keydown', function (e) {
+  keys[e.key] = true;
+  keys[e.code] = true; // Support both
+  // Prevent scrolling with arrows/space
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', ' '].includes(e.code) || ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', ' '].includes(e.key)) {
+    e.preventDefault();
+  }
+  if (isGameOver && (e.code === 'Space' || e.code === 'Enter' || e.key === ' ' || e.key === 'Enter')) resetGame();
 });
-document.addEventListener('keyup', function (e) {
-  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+
+window.addEventListener('keyup', function (e) {
+  keys[e.key] = false;
+  keys[e.code] = false;
 });
+
+// Touch Controls
+const btnLeft = document.getElementById('btnLeft');
+const btnRight = document.getElementById('btnRight');
+
+if (btnLeft && btnRight) {
+  const handleLeftDown = (e) => { if (e.cancelable) e.preventDefault(); isTouchLeft = true; };
+  const handleLeftUp = (e) => { if (e.cancelable) e.preventDefault(); isTouchLeft = false; };
+  const handleRightDown = (e) => { if (e.cancelable) e.preventDefault(); isTouchRight = true; };
+  const handleRightUp = (e) => { if (e.cancelable) e.preventDefault(); isTouchRight = false; };
+
+  btnLeft.addEventListener('mousedown', handleLeftDown);
+  btnLeft.addEventListener('touchstart', handleLeftDown, { passive: false });
+  btnLeft.addEventListener('mouseup', handleLeftUp);
+  btnLeft.addEventListener('touchend', handleLeftUp, { passive: false });
+  btnLeft.addEventListener('mouseleave', handleLeftUp);
+
+  btnRight.addEventListener('mousedown', handleRightDown);
+  btnRight.addEventListener('touchstart', handleRightDown, { passive: false });
+  btnRight.addEventListener('mouseup', handleRightUp);
+  btnRight.addEventListener('touchend', handleRightUp, { passive: false });
+  btnRight.addEventListener('mouseleave', handleRightUp);
+}
 
 function resetGame() {
   isGameOver = false;
@@ -210,15 +265,24 @@ function update() {
     if (meteorSpeedScale > 3.0) meteorSpeedScale = 3.0;
   }
 
-  // プレイヤー移動
-  let currentSpeed = player.speed * playerSpeedScale;
-  if (keys.right) player.x += currentSpeed;
-  if (keys.left) player.x -= currentSpeed;
+  // Player Movement
+  let moveSpeed = player.speed * playerSpeedScale;
+
+  if (keys['ArrowLeft'] || keys['Left'] || keys['a'] || isTouchLeft) {
+    player.x -= moveSpeed;
+  }
+  if (keys['ArrowRight'] || keys['Right'] || keys['d'] || isTouchRight) {
+    player.x += moveSpeed;
+  }
+
+  // Boundary Check
   if (player.x < 0) player.x = 0;
-  if (player.x > SCREEN_WIDTH - player.width) player.x = SCREEN_WIDTH - player.width;
+  if (player.x + player.width > SCREEN_WIDTH) player.x = SCREEN_WIDTH - player.width;
 
   // 隕石生成
-  if (Math.random() < 0.02) {
+  // 800px時代の密度(0.02)の1.5倍相当にする計算
+  // 400px換算で等倍なら0.01、その1.3倍で0.013
+  if (Math.random() < 0.013) {
     meteors.push({
       x: Math.random() * (SCREEN_WIDTH - 30),
       y: -30,
@@ -285,6 +349,16 @@ function update() {
           highScore = currentFinalScore;
           setHighScore(currentDifficulty, highScore);
         }
+
+        // スキン解放チェック (20,000点)
+        if (currentFinalScore >= 20000 && !isVillainUnlocked) {
+          isVillainUnlocked = true;
+          localStorage.setItem('meteor_skin_villain_unlocked', 'true');
+          if (skinSelect) {
+            skinSelect.options[1].disabled = false;
+            skinSelect.options[1].text = "Villain (Red)";
+          }
+        }
       }
     }
 
@@ -339,7 +413,8 @@ function draw() {
 
   // プレイヤー描画
   if (Math.floor(now / 100) % 2 === 0 || now >= invincibleEndTime) {
-    ctx.drawImage(imgSpaceship, player.x, player.y, player.width, player.height);
+    let shipImg = (currentSkin === 'villain') ? imgSpaceshipVillain : imgSpaceship;
+    ctx.drawImage(shipImg, player.x, player.y, player.width, player.height);
   }
 
   if (now < invincibleEndTime) {
@@ -379,16 +454,20 @@ function draw() {
   if (isProgressive) diffLabel = "PROG (x" + meteorSpeedScale.toFixed(2) + ")";
   ctx.fillText('High Score (' + diffLabel + '): ' + highScore, 20, 60);
 
+  // Destroyed Count
+  ctx.fillStyle = 'white';
+  ctx.fillText('Destroyed meteorite: ' + destroyedCount, 20, 90);
+
   // Effect Timers
   if (now < invincibleEndTime) {
     ctx.fillStyle = 'gold';
     let remaining = Math.ceil((invincibleEndTime - now) / 1000);
-    ctx.fillText('INVINCIBLE: ' + remaining, 20, 90);
+    ctx.fillText('INVINCIBLE: ' + remaining, 20, 120);
   }
   if (now < slowDownEndTime) {
     ctx.fillStyle = 'cyan';
     let remaining = Math.ceil((slowDownEndTime - now) / 1000);
-    ctx.fillText('SLOW MOTION: ' + remaining, 20, 120);
+    ctx.fillText('SLOW MOTION: ' + remaining, 20, 150);
   }
 
   if (isGameOver) {
@@ -417,6 +496,11 @@ function draw() {
       ctx.font = '24px sans-serif';
       ctx.fillText('NEW HIGH SCORE!', SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 140);
       ctx.fillStyle = 'white';
+    } else if (finalScore >= 20000 && currentSkin !== 'villain') {
+      // Show unlock message if high score enough and not using it yet
+      ctx.fillStyle = '#ff5555';
+      ctx.font = '20px sans-serif';
+      ctx.fillText('SKIN UNLOCKED! Check Settings', SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 140);
     }
 
     ctx.fillText('Press SPACE or ENTER to Restart', SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 180);
@@ -424,4 +508,27 @@ function draw() {
   }
 }
 
-gameLoop();
+// --- Start Screen Logic ---
+const startScreen = document.getElementById('startScreen');
+const startBtn = document.getElementById('startBtn');
+let isGameRunning = false;
+
+if (startBtn) {
+  startBtn.addEventListener('click', () => {
+    startGame();
+  });
+}
+
+function startGame() {
+  if (isGameRunning) return;
+  startScreen.style.display = 'none';
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  isGameRunning = true;
+  resetGame();
+  gameLoop();
+}
+
+// Delete initial gameLoop() call, wait for button
+// gameLoop();
